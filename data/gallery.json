@@ -28,6 +28,29 @@
    "aspect": 1.3335,
    "addedAt": 1795365200280,
    "catNo": 1
+  },
+  {
+   "id": "59399b55110d4e",
+   "kind": "painting",
+   "title": "Untitled",
+   "collection": "",
+   "year": "2026",
+   "medium": "Mixed media",
+   "place": "",
+   "camera": "",
+   "hCm": null,
+   "wCm": null,
+   "unit": "cm",
+   "status": "available",
+   "price": null,
+   "currency": "INR",
+   "description": "",
+   "image": "media/59399b55110d4e-k64ml.jpg",
+   "thumb": "media/59399b55110d4e-k64ml-t.jpg",
+   "extras": [],
+   "aspect": 1,
+   "addedAt": 1795365622527,
+   "catNo": 2
   }
  ]
 }
