@@ -462,11 +462,9 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   <div class="body">
     <p>Your site is saved in your GitHub repository. Signing in with a GitHub access token lets this browser add and edit work. Visitors never see these tools.</p>
     <ol class="steps">
-      <li>Open <a id="tokLink" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
-      <li>Token name: <code>gallery editing</code>. Expiration: up to a year.</li>
-      <li>Repository access: <b>Only select repositories</b>, then pick <code id="repoName">gallery</code>.</li>
-      <li>Permissions → Repository permissions → <b>Contents</b>: <b>Read and write</b>.</li>
-      <li>Generate the token, copy it, and paste it below.</li>
+      <li>Open <a id="tokLink" href="https://github.com/settings/personal-access-tokens/new?name=Gallery+editing&amp;description=Add+and+edit+work+on+my+gallery+site&amp;expires_in=365&amp;contents=write" target="_blank" rel="noopener">this pre-filled GitHub page</a>. Name, one-year expiry and the Contents: Read and write permission are already set.</li>
+      <li>Under Repository access choose <b>Only select repositories</b> and pick <code id="repoName">gallery</code>.</li>
+      <li>Tap <b>Generate token</b>, copy it, and paste it below.</li>
     </ol>
     <div class="field"><label for="tokIn">Access token</label><input id="tokIn" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></div>
     <p class="small" id="signMsg">The token stays in this browser only. Sign in once on each device you edit from.</p>
