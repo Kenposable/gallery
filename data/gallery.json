@@ -5,5 +5,29 @@
   "photoTagline": "Photographs",
   "currency": "INR"
  },
- "works": []
+ "works": [
+  {
+   "id": "bfc7b72d1cd849",
+   "kind": "painting",
+   "title": "Untitled",
+   "collection": "",
+   "year": "2026",
+   "medium": "Acrylic on paper",
+   "place": "",
+   "camera": "",
+   "hCm": null,
+   "wCm": null,
+   "unit": "cm",
+   "status": "available",
+   "price": null,
+   "currency": "INR",
+   "description": "",
+   "image": "media/bfc7b72d1cd849-owoh3.jpg",
+   "thumb": "media/bfc7b72d1cd849-owoh3-t.jpg",
+   "extras": [],
+   "aspect": 1.3335,
+   "addedAt": 1795365200280,
+   "catNo": 1
+  }
+ ]
 }
