@@ -27,6 +27,7 @@
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
+html, body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; }
 body { background: var(--wall); color: var(--ink); font-family: var(--serif); font-size: 16px; line-height: 1.5; overflow: hidden; -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
@@ -64,6 +65,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .histnav button + button { border-left: 1px solid var(--line); }
 .histnav button:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
 .histnav button:disabled { color: #c4c0b8; cursor: default; }
+.fab { position: fixed; right: 16px; bottom: 76px; z-index: 30; height: 46px; padding: 0 18px; border: 0; border-radius: 23px; background: var(--marigold); color: #1b1305; font-family: var(--display); font-weight: 700; font-size: 15px; box-shadow: 0 10px 24px -10px rgba(0,0,0,.45); }
 .count { font-family: var(--mono); font-size: 11px; }
 
 /* ---------- 3D wall ---------- */
@@ -353,6 +355,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   <button type="button" class="go" id="fOpen">View details</button>
 </div>
 <div class="note" id="note" hidden></div>
+<button type="button" class="fab" id="fab" hidden>+ Add</button>
 
 <!-- Grid / shop -->
 <section class="page" id="pIndex" hidden aria-labelledby="ixTitle">
@@ -585,8 +588,8 @@ function src(ref) {
 const DEFAULTS = { title: "Anuskha Saha", tagline: "Paintings", photoTagline: "Photographs", lede: "", about: "", email: "", instagram: "", whatsapp: "", ship: "", based: "", currency: "INR" };
 const STATUSES = ["available", "reserved", "sold", "nfs"];
 const KIND = {
-  painting: { label: "Paintings", tab: "Paintings", one: "painting", many: "paintings", group: "Collection", fallback: "Selected works", wall: "paintings", grid: "shop", gridLabel: "Shop", longCm: 75, gapCm: 60 },
-  photo: { label: "Photographs", tab: "Photos", one: "photograph", many: "photographs", group: "Series", fallback: "Selected photographs", wall: "photos", grid: "photos-grid", gridLabel: "Grid", longCm: 45, gapCm: 42 },
+  painting: { label: "Paintings", tab: "Paintings", one: "painting", many: "paintings", group: "Collection", fallback: "Other paintings", wall: "paintings", grid: "shop", gridLabel: "Shop", longCm: 75, gapCm: 60 },
+  photo: { label: "Photographs", tab: "Photos", one: "photograph", many: "photographs", group: "Series", fallback: "Other photographs", wall: "photos", grid: "photos-grid", gridLabel: "Grid", longCm: 45, gapCm: 42 },
 };
 const MAT_CM = 5, FRAME_CM = 1.1;
 
@@ -697,6 +700,12 @@ function computeCfg() {
     focusH: portrait ? 0.46 : 0.56, focusW: portrait ? 0.82 : 0.62,
     rest: portrait ? 0.78 : 0.86,
   };
+  { // which point of the wall sits at the centre of the screen in the corridor view
+    const c = CFG.corridor, fx = Math.sin(c.yaw), fz = -Math.cos(c.yaw);
+    const b = c.x * fx + c.z * fz, t = -b + Math.sqrt(b * b - (c.x * c.x + c.z * c.z - R * R));
+    let phi = Math.atan2(c.x + t * fx, c.z + t * fz); if (phi < 0) phi += 2 * Math.PI;
+    CFG.center = Math.PI - phi;
+  }
   stage.style.perspective = CFG.P + "px";
   DPR = Math.min(2, window.devicePixelRatio || 1);
   canvas.width = Math.round(VW * DPR); canvas.height = Math.round(VH * DPR);
@@ -756,10 +765,12 @@ function buildWall() {
   if (works) {
     S.groups.forEach((g) => {
       const ck = "col:" + S.section + ":" + g.name;
-      const ce = take(ck);
-      ce.className = "item col card-w"; ce.textContent = "";
-      ce.append(el("div", "k", K.group), el("h2", "", g.name), el("div", "c", plural(g.list.length, S.section)));
-      items.push({ key: ck, type: "col", el: ce, w: 270, h: 300, y: HANG_Y, group: g.name });
+      if (g.name !== K.fallback) {
+        const ce = take(ck);
+        ce.className = "item col card-w"; ce.textContent = "";
+        ce.append(el("div", "k", K.group), el("h2", "", g.name), el("div", "c", plural(g.list.length, S.section)));
+        items.push({ key: ck, type: "col", el: ce, w: 270, h: 300, y: HANG_Y, group: g.name });
+      }
       g.list.forEach((p) => {
         const k = "p:" + p.id;
         want.add(k);
@@ -815,8 +826,8 @@ function buildWall() {
   }
   S.items = items;
   const oldMin = S.min;
-  S.min = items[0].s + CFG.R * CFG.rest;
-  S.max = Math.max(S.min, items[items.length - 1].s + CFG.R * 0.05);
+  S.min = items[0].s + CFG.R * (CFG.portrait ? CFG.center : CFG.rest);
+  S.max = Math.max(S.min, items[items.length - 1].s + CFG.R * Math.max(0.05, CFG.center));
   if ((S.scroll === 0 && S.target === 0) || (S.scroll === oldMin && S.target === oldMin)) S.scroll = S.target = S.min;
   S.target = clamp(S.target, S.min, S.max);
   S.scroll = clamp(S.scroll, S.min - 2000, S.max + 2000);
@@ -921,7 +932,7 @@ function updateHud(best) {
   if (name === hudGroup) return;
   hudGroup = name;
   const g = S.groups.find((x) => x.name === name);
-  $("hudName").textContent = g ? g.name : KIND[S.section].label;
+  $("hudName").textContent = g && g.name !== KIND[S.section].fallback ? g.name : KIND[S.section].label;
   const n = countOf(S.section);
   $("hudSub").textContent = g ? plural(g.list.length, S.section) : (n ? plural(n, S.section) + " on the wall" : "");
 }
@@ -1062,7 +1073,7 @@ function showView(v) {
   const wall = v === "wall";
   stage.style.visibility = wall ? "" : "hidden"; canvas.style.visibility = wall ? "" : "hidden";
   $("hud").hidden = !wall || S.mode === "focus"; $("focusCtl").hidden = !wall || S.mode !== "focus";
-  updateNote(); setNav();
+  updateNote(); setNav(); syncFab();
   if (wall) { layout(); drawWall(); kick(); }
 }
 function route() {
@@ -1579,7 +1590,7 @@ function addCard({ file, existing }) {
   fields.append(mk("title", "Title", "text", existing ? p.title : (base && !/^[\d\s]+$/.test(base) ? base.replace(/^./, (c) => c.toUpperCase()) : ""), { max: 140, placeholder: "Untitled" }));
   const r1row = el("div", "row");
   r1row.append(
-    mk("collection", photo ? "Series" : "Collection", "text", existing ? p.collection : $("defCol").value.trim(), { list: "colList", max: 80, placeholder: KIND[kind].fallback }),
+    mk("collection", photo ? "Series" : "Collection", "text", existing ? p.collection : $("defCol").value.trim(), { list: "colList", max: 80, placeholder: photo ? "e.g. Ghats at dawn (optional)" : "e.g. Kashi Mornings (optional)" }),
     mk("year", "Year", "text", existing ? p.year : $("defYear").value.trim(), { inputmode: "numeric", max: 12 }),
   );
   fields.append(r1row);
@@ -1771,7 +1782,7 @@ function applySettings() {
   if (S.view === "about") renderAbout();
   if (S.view === "index") renderIndex();
 }
-function applyOwner() { $("ownerBtn").hidden = !S.isOwner; rerenderAll(); }
+function applyOwner() { $("ownerBtn").hidden = !S.isOwner; syncFab(); rerenderAll(); }
 function rerenderAll() {
   regroup(); buildWall();
   for (const it of S.items) if (it.type === "work") setImg(it, S.focusKey === it.key);
@@ -1835,7 +1846,7 @@ async function initClaude() {
   try { [db, user, assets, downloads] = await Promise.all(["db", "user", "assets", "downloads"].map((n) => c.use(n).catch(() => null))); } catch {}
   Object.assign(S, { db, user, assets, downloads });
   if (user) { try { S.isOwner = !!(await user.isOwner()); } catch { S.isOwner = false; } }
-  $("ownerBtn").hidden = !S.isOwner;
+  $("ownerBtn").hidden = !S.isOwner; syncFab();
   if (!db) { S.dataState = "none"; buildWall(); updateNote(); return; }
   const timer = setTimeout(() => { if (S.dataState === "loading") { S.dataState = "slow"; buildWall(); updateNote(); } }, 10000);
   try {
@@ -1846,6 +1857,11 @@ async function initClaude() {
     db.doc("site/settings").onSnapshot((snap) => { S.settings = cleanSettings(snap.exists ? snap.data() : {}); applySettings(); }, () => {});
   } catch { clearTimeout(timer); S.dataState = "error"; buildWall(); updateNote(); }
 }
+
+/* owner shortcut + stop iOS from sliding the page */
+$("fab").onclick = () => openAdd(S.section);
+function syncFab() { $("fab").hidden = !(S.isOwner && S.view === "wall"); $("fab").textContent = "+ Add " + KIND[S.section].many; }
+document.addEventListener("touchmove", (e) => { if (!e.target.closest(".page, .drawer, .room, .dialog")) e.preventDefault(); }, { passive: false });
 
 /* back / forward */
 $("navBack").onclick = () => history.back();
